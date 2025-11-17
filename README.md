@@ -1,11 +1,13 @@
 # PNG 이미지 컬러맵 재조정 도구
 
-PNG 이미지에서 검은색(0 값)을 제외하고 나머지 값들의 컬러맵 스케일을 원하는 범위로 재조정하는 Python 도구입니다.
+PNG 이미지에서 검은색(0 값)을 제외하고 나머지 값들의 컬러맵 스케일을 원하는 범위로 재조정하거나, matplotlib 컬러맵을 적용하는 Python 도구입니다.
 
 ## 주요 기능
 
 - ✅ 0 값(검은색) 보존 기능
-- ✅ 사용자 정의 범위로 스케일 재조정
+- ✅ **matplotlib 컬러맵 지원** (jet, viridis, plasma, inferno 등 100+ 컬러맵)
+- ✅ 사용자 정의 범위로 선형 스케일 재조정
+- ✅ 컬러맵 정규화 범위 (vmin/vmax) 사용자 지정 가능
 - ✅ 그레이스케일 및 컬러 이미지 지원
 - ✅ 8-bit, 16-bit 이미지 지원
 - ✅ 명령줄 인터페이스 제공
@@ -32,25 +34,39 @@ pip install numpy Pillow matplotlib
 
 ## 사용법
 
+이 도구는 두 가지 모드를 지원합니다:
+1. **선형 스케일링 모드**: 픽셀 값을 사용자 지정 범위로 선형 변환
+2. **컬러맵 모드**: matplotlib 컬러맵을 적용하여 컬러 이미지로 변환
+
 ### 1. 명령줄에서 사용
 
-#### 기본 사용법 (0 제외, 0-255 범위로 재조정)
+#### 선형 스케일링 모드
 
 ```bash
+# 기본 사용법 (0 제외, 0-255 범위로 재조정)
 python recolor_image.py input.png output.png
-```
 
-#### 사용자 지정 범위로 재조정
-
-```bash
-# 0을 제외한 값들을 10-200 범위로 재조정
+# 사용자 지정 범위로 재조정 (0 제외, 10-200 범위)
 python recolor_image.py input.png output.png --min 10 --max 200
+
+# 0 값도 함께 재조정
+python recolor_image.py input.png output.png --no-preserve-zero
 ```
 
-#### 0 값도 함께 재조정
+#### 컬러맵 모드
 
 ```bash
-python recolor_image.py input.png output.png --no-preserve-zero
+# jet 컬러맵 적용 (0 값은 검은색으로 보존)
+python recolor_image.py input.png output.png --colormap jet
+
+# viridis 컬러맵 적용
+python recolor_image.py input.png output.png --colormap viridis
+
+# 사용자 지정 범위로 컬러맵 적용 (vmin=50, vmax=150)
+python recolor_image.py input.png output.png --colormap plasma --vmin 50 --vmax 150
+
+# 사용 가능한 컬러맵 목록 보기
+python recolor_image.py --list-colormaps
 ```
 
 #### 도움말 보기
@@ -60,6 +76,8 @@ python recolor_image.py --help
 ```
 
 ### 2. Python 모듈로 사용
+
+#### 선형 스케일링
 
 ```python
 from recolor_image import recolor_image
@@ -83,7 +101,36 @@ result = recolor_image(
 )
 ```
 
+#### 컬러맵 적용
+
+```python
+from recolor_image import apply_colormap
+
+# jet 컬러맵 적용
+result = apply_colormap('input.png', 'output.png', colormap='jet')
+
+# viridis 컬러맵 적용 (사용자 지정 범위)
+result = apply_colormap(
+    'input.png',
+    'output.png',
+    colormap='viridis',
+    vmin=50,
+    vmax=150
+)
+
+# 컬러맵 적용 (배경색 지정)
+result = apply_colormap(
+    'input.png',
+    'output.png',
+    colormap='plasma',
+    preserve_zero=True,
+    background_color=(255, 255, 255, 255)  # 흰색 배경
+)
+```
+
 ### 3. 예제 실행
+
+#### 선형 스케일링 예제
 
 샘플 이미지를 생성하고 다양한 재조정 방법을 테스트할 수 있습니다:
 
@@ -97,17 +144,33 @@ python example_usage.py
 - 예제 3: 0 값 포함 재조정
 - 예제 4: 좁은 범위 재조정 (100-120)
 
+#### 컬러맵 적용 예제
+
+다양한 컬러맵을 테스트할 수 있습니다:
+
+```bash
+python example_colormap.py
+```
+
+이 명령은 다음 예제들을 실행합니다:
+- 예제 1: jet 컬러맵 적용
+- 예제 2: viridis 컬러맵 적용
+- 예제 3: 사용자 지정 범위로 컬러맵 적용
+- 예제 4: 여러 컬러맵 비교 (10개 컬러맵)
+- 예제 5: hot 컬러맵 (열화상 이미지 스타일)
+- 예제 6: seismic 컬러맵 (발산형)
+
 ## 동작 원리
 
-### 선형 변환
+### 선형 변환 (Linear Scaling)
 
-이 도구는 선형 변환을 사용하여 픽셀 값을 재조정합니다:
+선형 스케일링 모드는 선형 변환을 사용하여 픽셀 값을 재조정합니다:
 
 ```
 new_value = (old_value - old_min) / (old_max - old_min) * (new_max - new_min) + new_min
 ```
 
-### 예시
+**예시:**
 
 원본 이미지가 다음과 같은 값을 가진다고 가정:
 - 픽셀 값 범위: 0, 50-150
@@ -120,21 +183,56 @@ new_value = (old_value - old_min) / (old_max - old_min) * (new_max - new_min) + 
 - 100 값 → 127.5
 - 150 값 → 255
 
+### 컬러맵 적용 (Colormap Application)
+
+컬러맵 모드는 matplotlib의 컬러맵을 사용하여 값을 색상으로 매핑합니다:
+
+1. **정규화**: 0이 아닌 값들을 0-1 범위로 정규화
+   ```
+   normalized = (value - vmin) / (vmax - vmin)
+   ```
+
+2. **컬러맵 적용**: 정규화된 값(0-1)을 컬러맵에 매핑하여 RGBA 색상 얻기
+   ```
+   color = colormap(normalized)  # Returns (R, G, B, A) in 0-1 range
+   ```
+
+3. **0 값 보존**: preserve_zero=True인 경우, 0 값은 배경색으로 설정 (기본: 검은색)
+
+**예시:**
+
+원본 이미지가 0, 50-150 값을 가진다고 가정하고, jet 컬러맵을 적용하면:
+- 0 값 → 검은색 (보존됨)
+- 50 값 → 파란색 (jet의 최소값)
+- 100 값 → 녹색/노란색 (jet의 중간값)
+- 150 값 → 빨간색 (jet의 최대값)
+
+**인기 있는 컬러맵:**
+- **jet**: 고전적인 무지개 컬러맵 (파란색 → 녹색 → 노란색 → 빨간색)
+- **viridis**: 인지적으로 균일한 컬러맵 (과학 시각화 권장)
+- **plasma**: 밝은 색상의 순차적 컬러맵
+- **hot**: 열화상 이미지 스타일 (검은색 → 빨간색 → 노란색 → 흰색)
+- **coolwarm**: 발산형 컬러맵 (파란색 ← 흰색 → 빨간색)
+
 ## 명령줄 옵션
 
 | 옵션 | 설명 | 기본값 |
 |------|------|--------|
 | `input` | 입력 PNG 파일 경로 | (필수) |
 | `output` | 출력 PNG 파일 경로 | (필수) |
-| `--min` | 새로운 최소값 | 원본 최소값 |
-| `--max` | 새로운 최대값 | 255 |
+| `--colormap` | matplotlib 컬러맵 이름 (예: jet, viridis) | None (선형 모드) |
+| `--vmin` | 컬러맵 적용 시 최소값 | 0이 아닌 값의 최소값 |
+| `--vmax` | 컬러맵 적용 시 최대값 | 0이 아닌 값의 최대값 |
+| `--list-colormaps` | 사용 가능한 컬러맵 목록 표시 | - |
+| `--min` | 새로운 최소값 (선형 모드) | 원본 최소값 |
+| `--max` | 새로운 최대값 (선형 모드) | 255 |
 | `--no-preserve-zero` | 0 값도 함께 재조정 | False (0 값 보존) |
 
 ## 함수 API
 
 ### `recolor_image(input_path, output_path, new_min=None, new_max=None, preserve_zero=True)`
 
-PNG 이미지의 컬러맵 스케일을 재조정합니다.
+PNG 이미지의 스케일을 선형 변환으로 재조정합니다.
 
 **Parameters:**
 - `input_path` (str): 입력 PNG 파일 경로
@@ -149,6 +247,33 @@ PNG 이미지의 컬러맵 스케일을 재조정합니다.
   - `original_range`: 원본 값 범위 (min, max)
   - `new_range`: 새로운 값 범위 (min, max)
   - `preserve_zero`: 0 값 보존 여부
+
+### `apply_colormap(input_path, output_path, colormap='jet', preserve_zero=True, vmin=None, vmax=None, background_color=None)`
+
+PNG 이미지에 matplotlib 컬러맵을 적용합니다.
+
+**Parameters:**
+- `input_path` (str): 입력 PNG 파일 경로
+- `output_path` (str): 출력 PNG 파일 경로
+- `colormap` (str, optional): matplotlib 컬러맵 이름 (기본값: 'jet')
+- `preserve_zero` (bool, optional): 0 값을 보존할지 여부 (기본값: True)
+- `vmin` (float, optional): 컬러맵 적용 시 최소값 (기본값: 0이 아닌 값의 최소값)
+- `vmax` (float, optional): 컬러맵 적용 시 최대값 (기본값: 0이 아닌 값의 최대값)
+- `background_color` (tuple, optional): 0 값에 적용할 배경색 (R, G, B, A) 0-255 범위 (기본값: 검은색)
+
+**Returns:**
+- `dict`: 변환 정보를 포함한 딕셔너리
+  - `original_shape`: 원본 이미지 크기
+  - `original_range`: 원본 값 범위 (min, max)
+  - `colormap`: 사용한 컬러맵 이름
+  - `vmin`: 컬러맵 최소값
+  - `vmax`: 컬러맵 최대값
+  - `preserve_zero`: 0 값 보존 여부
+  - `background_color`: 배경색
+
+### `list_colormaps()`
+
+사용 가능한 matplotlib 컬러맵 목록을 출력합니다. 100개 이상의 컬러맵이 카테고리별로 분류되어 표시됩니다.
 
 ## 사용 사례
 
