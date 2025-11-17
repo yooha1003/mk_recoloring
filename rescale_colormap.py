@@ -98,7 +98,7 @@ def rescale_colormap_image(input_path, output_path, original_max=0.5, new_max=0.
 
     # 결과 저장
     result_img = Image.fromarray(result_array, mode='RGBA')
-    result_img.save(output_path)
+    result_img.save(output_path, dpi=(300, 300))
 
     print(f"저장 완료: {output_path}\n")
 

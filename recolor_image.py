@@ -107,7 +107,7 @@ def recolor_image(input_path, output_path, new_min=None, new_max=None, preserve_
 
     # 결과 저장
     result_img = Image.fromarray(result_array, mode=original_mode)
-    result_img.save(output_path)
+    result_img.save(output_path, dpi=(300, 300))
 
     print(f"\n저장 완료: {output_path}")
 
@@ -234,7 +234,7 @@ def apply_colormap(input_path, output_path, colormap='jet', preserve_zero=True,
 
     # 결과 저장 (RGBA 모드)
     result_img = Image.fromarray(result_array, mode='RGBA')
-    result_img.save(output_path)
+    result_img.save(output_path, dpi=(300, 300))
 
     print(f"\n저장 완료: {output_path}")
 
